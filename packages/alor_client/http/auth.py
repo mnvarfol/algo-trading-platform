@@ -14,9 +14,6 @@ class AuthClient:
             self._config.auth_url,
             params={"token": refresh_token},
         )
-        if not isinstance(data, dict):
-            raise HttpError("Unexpected response shape")
-
         access_token = data.get("AccessToken")
         if not access_token:
             raise HttpError("No AccessToken in response")

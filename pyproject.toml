@@ -9,6 +9,9 @@ dependencies = [
     "sqlalchemy>=2.0.52",
 ]
 
+[tool.pyright]
+extraPaths = ["packages", "services/alor-auth"]
+
 [dependency-groups]
 dev = [
     "alembic>=1.19.1",

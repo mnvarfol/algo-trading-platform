@@ -1,5 +1,7 @@
 import asyncio
+import importlib.util
 import os
+import sys
 from logging.config import fileConfig
 
 from alembic import context
@@ -25,11 +27,20 @@ db_url = (
 )
 config.set_main_option("sqlalchemy.url", db_url)
 
-# add your model's MetaData object here
-# for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
-target_metadata = None
+sys.path.insert(0, "packages")
+
+from storage.base import Base
+
+
+def _load_models(name: str, path: str) -> None:
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+
+_load_models("alor_auth_models", "services/alor-auth/models.py")
+
+target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

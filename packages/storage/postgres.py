@@ -1,4 +1,18 @@
+import os
+
+from sqlalchemy import URL
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+
+
+def build_url(host: str, port: int, user: str, password: str, database: str) -> URL:
+    return URL.create(
+        drivername="postgresql+asyncpg",
+        username=user,
+        password=password,
+        host=host,
+        port=port,
+        database=database,
+    )
 
 
 class PostgresConnection:
@@ -18,11 +32,18 @@ class PostgresConnection:
         self._database = database
         self._engine: AsyncEngine | None = None
 
-    async def init(self) -> None:
-        url = (
-            f"postgresql+asyncpg://{self._user}:{self._password}"
-            f"@{self._host}:{self._port}/{self._database}"
+    @classmethod
+    def from_env(cls) -> PostgresConnection:
+        return cls(
+            host=os.environ["POSTGRES_HOST"],
+            port=int(os.environ["POSTGRES_PORT"]),
+            user=os.environ["POSTGRES_USER"],
+            password=os.environ["POSTGRES_PASSWORD"],
+            database=os.environ["POSTGRES_DB"],
         )
+
+    async def init(self) -> None:
+        url = build_url(self._host, self._port, self._user, self._password, self._database)
         self._engine = create_async_engine(url)
 
     async def close(self) -> None:

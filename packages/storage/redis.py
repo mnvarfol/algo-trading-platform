@@ -1,3 +1,5 @@
+import os
+
 import redis.asyncio as redis
 from redis.asyncio import Redis
 
@@ -18,6 +20,14 @@ class RedisConnection:
         self._db = db
         self._max_connections = max_connections
         self._client: Redis | None = None
+
+    @classmethod
+    def from_env(cls) -> RedisConnection:
+        return cls(
+            host=os.environ["REDIS_HOST"],
+            port=int(os.environ["REDIS_PORT"]),
+            password=os.environ["REDIS_PASSWORD"],
+        )
 
     async def init(self) -> None:
         self._client = redis.Redis(

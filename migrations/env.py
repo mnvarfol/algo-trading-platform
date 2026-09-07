@@ -3,6 +3,7 @@ import importlib.util
 import os
 import sys
 from logging.config import fileConfig
+from pathlib import Path
 
 from alembic import context
 from dotenv import load_dotenv
@@ -11,6 +12,8 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 load_dotenv()
+
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -21,15 +24,23 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-db_url = (
-    f"postgresql+asyncpg://{os.environ['POSTGRES_USER']}:{os.environ['POSTGRES_PASSWORD']}"
-    f"@{os.environ['POSTGRES_HOST']}:{os.environ['POSTGRES_PORT']}/{os.environ['POSTGRES_DB']}"
-)
-config.set_main_option("sqlalchemy.url", db_url)
-
-sys.path.insert(0, "packages")
+sys.path.insert(0, str(BASE_DIR / "packages"))
 
 from storage.base import Base
+from storage.postgres import build_url
+
+db_url = build_url(
+    host=os.environ["POSTGRES_HOST"],
+    port=int(os.environ["POSTGRES_PORT"]),
+    user=os.environ["POSTGRES_USER"],
+    password=os.environ["POSTGRES_PASSWORD"],
+    database=os.environ["POSTGRES_DB"],
+)
+# configparser (which backs alembic.ini) treats "%" as interpolation syntax,
+# so a literal "%" from URL-encoding the password must be escaped as "%%".
+config.set_main_option(
+    "sqlalchemy.url", db_url.render_as_string(hide_password=False).replace("%", "%%")
+)
 
 
 def _load_models(name: str, path: str) -> None:
@@ -38,7 +49,7 @@ def _load_models(name: str, path: str) -> None:
     spec.loader.exec_module(module)
 
 
-_load_models("alor_auth_models", "services/alor-auth/models.py")
+_load_models("alor_auth_models", str(BASE_DIR / "services" / "alor-auth" / "models.py"))
 
 target_metadata = Base.metadata
 

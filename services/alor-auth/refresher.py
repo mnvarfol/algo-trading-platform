@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 from alor.client.http.auth import AuthClient
+from alor.token.keys import access_token_key
 from cryptography.fernet import Fernet
 from encryption import decrypt_token
 from models import Account
@@ -43,7 +44,7 @@ class TokenRefresher:
         refresh_token = decrypt_token(self._fernet, account.refresh_token)
         access_token = await self._auth_client.refresh_access_token(refresh_token)
         await self._redis.client.set(
-            f"token:alor:access:{account.id}",
+            access_token_key(account.id),
             access_token,
             ex=ACCESS_TOKEN_TTL,
         )

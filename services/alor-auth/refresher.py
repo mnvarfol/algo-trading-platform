@@ -48,3 +48,4 @@ class TokenRefresher:
             access_token,
             ex=ACCESS_TOKEN_TTL,
         )
+        logger.info("Refreshed access token for account %s", account.tag)

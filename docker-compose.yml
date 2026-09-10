@@ -10,6 +10,13 @@ x-redis-env: &redis-env
   REDIS_PORT: 6379
   REDIS_PASSWORD: ${REDIS_PASSWORD}
 
+x-loki-logging: &loki-logging
+  driver: loki
+  options:
+    loki-url: "http://localhost:3100/loki/api/v1/push"
+    loki-retries: "5"
+    loki-batch-size: "400"
+
 services:
   postgres:
     image: postgres:18
@@ -32,6 +39,15 @@ services:
     volumes:
       - redis_data:/data
 
+  loki:
+    image: grafana/loki:latest
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    volumes:
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+
   alor-auth:
     build:
       context: .
@@ -43,7 +59,10 @@ services:
     depends_on:
       - postgres
       - redis
+      - loki
+    logging: *loki-logging
 
 volumes:
   postgres_data:
   redis_data:
+  loki_data:

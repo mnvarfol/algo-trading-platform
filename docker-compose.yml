@@ -48,6 +48,19 @@ services:
       - loki_data:/loki
     command: -config.file=/etc/loki/local-config.yaml
 
+  grafana:
+    image: grafana/grafana:latest
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - loki
+
   alor-auth:
     build:
       context: .
@@ -66,3 +79,4 @@ volumes:
   postgres_data:
   redis_data:
   loki_data:
+  grafana_data:

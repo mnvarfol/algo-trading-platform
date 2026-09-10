@@ -15,6 +15,7 @@ extraPaths = ["packages", "services/alor-auth"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+pythonpath = ["packages", "services/alor-auth"]
 
 [dependency-groups]
 dev = [

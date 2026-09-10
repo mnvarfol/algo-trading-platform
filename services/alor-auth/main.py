@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 import signal
+import time
 
 from alor.client.config import Config
 from alor.client.http.auth import AuthClient
@@ -25,7 +26,11 @@ async def _close_all(*connections) -> None:
 
 
 async def main() -> None:
-    logging.basicConfig(level=logging.INFO)
+    logging.Formatter.converter = time.gmtime
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s UTC %(levelname)s %(name)s: %(message)s",
+    )
 
     postgres = PostgresConnection.from_env()
     redis = RedisConnection.from_env()

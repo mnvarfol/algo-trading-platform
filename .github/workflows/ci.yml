@@ -19,6 +19,34 @@ jobs:
       - name: Run ruff
         run: uv run ruff check .
 
+  test:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:8
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          python-version: "3.14"
+          enable-cache: true
+      - name: Install dependencies
+        run: uv sync
+      - name: Run tests
+        run: uv run pytest
+
   validate-compose:
     runs-on: ubuntu-latest
     steps:

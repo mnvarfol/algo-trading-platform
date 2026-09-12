@@ -11,11 +11,11 @@ dependencies = [
 ]
 
 [tool.pyright]
-extraPaths = ["packages", "services/alor-auth"]
+extraPaths = ["packages", "services/alor"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-pythonpath = ["packages", "services/alor-auth"]
+pythonpath = ["packages", "services/alor"]
 
 [dependency-groups]
 dev = [

@@ -64,7 +64,7 @@ services:
   alor-auth:
     build:
       context: .
-      dockerfile: services/alor-auth/Dockerfile
+      dockerfile: services/alor/auth/Dockerfile
     restart: unless-stopped
     environment:
       <<: [*postgres-env, *redis-env]

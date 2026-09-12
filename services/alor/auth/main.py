@@ -7,10 +7,11 @@ import time
 from alor.client.config import Config
 from alor.client.http.auth import AuthClient
 from alor.client.http.transport import HttpTransport
-from refresher import TokenRefresher
-from repository import AccountRepository
 from storage.postgres import PostgresConnection
 from storage.redis import RedisConnection
+
+from auth.refresher import TokenRefresher
+from auth.repository import AccountRepository
 
 logger = logging.getLogger(__name__)
 

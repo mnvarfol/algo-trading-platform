@@ -4,10 +4,11 @@ import logging
 from alor.client.http.auth import AuthClient
 from alor.token.keys import access_token_key
 from cryptography.fernet import Fernet
-from encryption import decrypt_token
-from models import Account
-from repository import AccountRepository
 from storage.redis import RedisConnection
+
+from auth.encryption import decrypt_token
+from auth.models import Account
+from auth.repository import AccountRepository
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,7 @@ class TokenRefresher:
         self._fernet = Fernet(encryption_key)
 
     async def refresh_all(self) -> None:
-        accounts = await self._repository.get_active_accounts()
+        accounts = await self._repository.get_active()
         results = await asyncio.gather(
             *(self._refresh_account(account) for account in accounts),
             return_exceptions=True,

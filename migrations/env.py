@@ -1,5 +1,4 @@
 import asyncio
-import importlib.util
 import os
 import sys
 from logging.config import fileConfig
@@ -25,6 +24,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 sys.path.insert(0, str(BASE_DIR / "packages"))
+sys.path.insert(0, str(BASE_DIR / "services" / "alor"))
 
 from storage.base import Base
 from storage.postgres import build_url
@@ -43,14 +43,8 @@ config.set_main_option(
 )
 
 
-def _load_models(name: str, path: str) -> None:
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-
-
-_load_models("alor_auth_models", str(BASE_DIR / "services" / "alor-auth" / "models.py"))
-_load_models("alor_portfolios_models", str(BASE_DIR / "services" / "alor-portfolios" / "models.py"))
+import auth.models  # noqa: F401
+import portfolios.models  # noqa: F401
 
 target_metadata = Base.metadata
 

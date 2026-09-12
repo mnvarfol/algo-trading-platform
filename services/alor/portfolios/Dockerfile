@@ -8,9 +8,9 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --no-dev --no-install-project
 
 COPY packages/ ./packages/
-COPY services/alor-auth/ ./services/alor-auth/
+COPY services/alor/portfolios/ ./services/alor/portfolios/
 
-ENV PYTHONPATH=/app/packages:/app/services/alor-auth
+ENV PYTHONPATH=/app/packages:/app/services/alor
 ENV PATH=/app/.venv/bin:$PATH
 
-CMD ["python", "services/alor-auth/main.py"]
+CMD ["python", "-m", "portfolios.main"]

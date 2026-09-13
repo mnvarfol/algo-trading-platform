@@ -55,6 +55,12 @@ class PortfolioRefresher:
             portfolio.id,
             portfolio_value,
         )
+        logger.info(
+            "Refreshed portfolio_value for portfolio %s:%s:%s",
+            portfolio.account_id,
+            portfolio.portfolio,
+            portfolio.exchange,
+        )
 
     async def refresh_risk_category_ids(self) -> None:
         portfolios = await self._portfolio_repository.get_active()
@@ -87,4 +93,10 @@ class PortfolioRefresher:
         await self._portfolio_repository.update_risk_category_id(
             portfolio.id,
             risk_category_id,
+        )
+        logger.info(
+            "Refreshed risk_category_id for portfolio %s:%s:%s",
+            portfolio.account_id,
+            portfolio.portfolio,
+            portfolio.exchange,
         )

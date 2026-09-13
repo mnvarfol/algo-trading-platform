@@ -75,6 +75,20 @@ services:
       - loki
     logging: *loki-logging
 
+  alor-portfolios:
+    build:
+      context: .
+      dockerfile: services/alor/portfolios/Dockerfile
+    restart: unless-stopped
+    environment:
+      <<: [*postgres-env, *redis-env]
+    depends_on:
+      - postgres
+      - redis
+      - loki
+      - alor-auth
+    logging: *loki-logging
+
 volumes:
   postgres_data:
   redis_data:

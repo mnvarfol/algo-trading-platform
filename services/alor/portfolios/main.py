@@ -1,21 +1,22 @@
 import asyncio
 import logging
-import os
 import signal
 import time
 
 from alor.client.config import Config
-from alor.client.http.auth import AuthClient
+from alor.client.http.read import ReadClient
 from alor.client.http.transport import HttpTransport
+from alor.token.service import TokenService
 from storage.postgres import PostgresConnection
 from storage.redis import RedisConnection
 
-from auth.refresher import TokenRefresher
-from auth.repository import AccountRepository
+from portfolios.refresher import PortfolioRefresher
+from portfolios.repository import PortfolioRepository
 
 logger = logging.getLogger(__name__)
 
-REFRESH_INTERVAL = 15 * 60
+PORTFOLIO_VALUE_REFRESH_INTERVAL = 15 * 60
+RISK_CATEGORY_REFRESH_INTERVAL = 24 * 60 * 60
 
 
 async def _close_all(*connections) -> None:
@@ -24,6 +25,18 @@ async def _close_all(*connections) -> None:
             await connection.close()
         except Exception:
             logger.exception("Failed to close %s", connection)
+
+
+async def _run_loop(name: str, fn, interval: float, stop_event: asyncio.Event) -> None:
+    while not stop_event.is_set():
+        try:
+            await fn()
+        except Exception:
+            logger.exception("%s cycle failed", name)
+        try:
+            await asyncio.wait_for(stop_event.wait(), timeout=interval)
+        except TimeoutError:
+            pass
 
 
 async def main() -> None:
@@ -54,19 +67,26 @@ async def main() -> None:
         pass
 
     try:
-        repository = AccountRepository(postgres)
-        auth_client = AuthClient(transport, Config())
-        refresher = TokenRefresher(repository, auth_client, redis, os.environ["ENCRYPTION_KEY"])
+        portfolio_repository = PortfolioRepository(postgres)
+        token_service = TokenService(redis)
+        read_client = ReadClient(transport, Config())
 
-        while not stop_event.is_set():
-            try:
-                await refresher.refresh_all()
-            except Exception:
-                logger.exception("Token refresh cycle failed")
-            try:
-                await asyncio.wait_for(stop_event.wait(), timeout=REFRESH_INTERVAL)
-            except TimeoutError:
-                pass
+        refresher = PortfolioRefresher(portfolio_repository, token_service, read_client)
+
+        await asyncio.gather(
+            _run_loop(
+                "Portfolio value refresh",
+                refresher.refresh_portfolio_values,
+                PORTFOLIO_VALUE_REFRESH_INTERVAL,
+                stop_event,
+            ),
+            _run_loop(
+                "Risk category refresh",
+                refresher.refresh_risk_category_ids,
+                RISK_CATEGORY_REFRESH_INTERVAL,
+                stop_event,
+            ),
+        )
     finally:
         await _close_all(transport, redis, postgres)
 

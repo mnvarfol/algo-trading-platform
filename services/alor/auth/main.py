@@ -2,11 +2,12 @@ import asyncio
 import logging
 import os
 import signal
-import time
+from datetime import datetime
 
 from alor.client.config import Config
 from alor.client.http.auth import AuthClient
 from alor.client.http.transport import HttpTransport
+from scheduling.loops import MOSCOW_TZ, run_interval
 from storage.postgres import PostgresConnection
 from storage.redis import RedisConnection
 
@@ -27,10 +28,12 @@ async def _close_all(*connections) -> None:
 
 
 async def main() -> None:
-    logging.Formatter.converter = time.gmtime
+    logging.Formatter.converter = staticmethod(
+        lambda secs: datetime.fromtimestamp(secs, tz=MOSCOW_TZ).timetuple()
+    )
     logging.basicConfig(
         level=logging.INFO,
-        format="%(asctime)s UTC %(levelname)s %(name)s: %(message)s",
+        format="%(asctime)s MSK %(levelname)s %(name)s: %(message)s",
     )
 
     postgres = PostgresConnection.from_env()
@@ -58,15 +61,7 @@ async def main() -> None:
         auth_client = AuthClient(transport, Config())
         refresher = TokenRefresher(repository, auth_client, redis, os.environ["ENCRYPTION_KEY"])
 
-        while not stop_event.is_set():
-            try:
-                await refresher.refresh_all()
-            except Exception:
-                logger.exception("Token refresh cycle failed")
-            try:
-                await asyncio.wait_for(stop_event.wait(), timeout=REFRESH_INTERVAL)
-            except TimeoutError:
-                pass
+        await run_interval("Token refresh", refresher.refresh_all, REFRESH_INTERVAL, stop_event)
     finally:
         await _close_all(transport, redis, postgres)
 

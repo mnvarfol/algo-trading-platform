@@ -44,7 +44,7 @@ class PostgresConnection:
 
     async def init(self) -> None:
         url = build_url(self._host, self._port, self._user, self._password, self._database)
-        self._engine = create_async_engine(url)
+        self._engine = create_async_engine(url, pool_pre_ping=True)
 
     async def close(self) -> None:
         if self._engine:

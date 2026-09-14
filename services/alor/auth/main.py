@@ -2,12 +2,12 @@ import asyncio
 import logging
 import os
 import signal
-import time
+from datetime import datetime
 
 from alor.client.config import Config
 from alor.client.http.auth import AuthClient
 from alor.client.http.transport import HttpTransport
-from scheduling.loops import run_interval
+from scheduling.loops import MOSCOW_TZ, run_interval
 from storage.postgres import PostgresConnection
 from storage.redis import RedisConnection
 
@@ -28,10 +28,12 @@ async def _close_all(*connections) -> None:
 
 
 async def main() -> None:
-    logging.Formatter.converter = time.gmtime
+    logging.Formatter.converter = staticmethod(
+        lambda secs: datetime.fromtimestamp(secs, tz=MOSCOW_TZ).timetuple()
+    )
     logging.basicConfig(
         level=logging.INFO,
-        format="%(asctime)s UTC %(levelname)s %(name)s: %(message)s",
+        format="%(asctime)s MSK %(levelname)s %(name)s: %(message)s",
     )
 
     postgres = PostgresConnection.from_env()

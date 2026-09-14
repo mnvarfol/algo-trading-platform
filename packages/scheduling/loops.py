@@ -1,9 +1,12 @@
 import asyncio
 import logging
 from collections.abc import Awaitable, Callable
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 logger = logging.getLogger(__name__)
+
+MOSCOW_TZ = ZoneInfo("Europe/Moscow")
 
 
 async def run_interval(
@@ -24,7 +27,7 @@ async def run_interval(
 
 
 def seconds_until(hour: int, minute: int) -> float:
-    now = datetime.now(UTC)
+    now = datetime.now(MOSCOW_TZ)
     target = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
     if target <= now:
         target += timedelta(days=1)

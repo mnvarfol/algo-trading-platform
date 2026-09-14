@@ -7,6 +7,7 @@ import time
 from alor.client.config import Config
 from alor.client.http.auth import AuthClient
 from alor.client.http.transport import HttpTransport
+from scheduling.loops import run_interval
 from storage.postgres import PostgresConnection
 from storage.redis import RedisConnection
 
@@ -58,15 +59,7 @@ async def main() -> None:
         auth_client = AuthClient(transport, Config())
         refresher = TokenRefresher(repository, auth_client, redis, os.environ["ENCRYPTION_KEY"])
 
-        while not stop_event.is_set():
-            try:
-                await refresher.refresh_all()
-            except Exception:
-                logger.exception("Token refresh cycle failed")
-            try:
-                await asyncio.wait_for(stop_event.wait(), timeout=REFRESH_INTERVAL)
-            except TimeoutError:
-                pass
+        await run_interval("Token refresh", refresher.refresh_all, REFRESH_INTERVAL, stop_event)
     finally:
         await _close_all(transport, redis, postgres)
 

@@ -7,6 +7,7 @@ from alor.client.config import Config
 from alor.client.http.read import ReadClient
 from alor.client.http.transport import HttpTransport
 from alor.token.service import TokenService
+from scheduling.loops import run_daily_at, run_interval
 from storage.postgres import PostgresConnection
 from storage.redis import RedisConnection
 
@@ -16,7 +17,8 @@ from portfolios.repository import PortfolioRepository
 logger = logging.getLogger(__name__)
 
 PORTFOLIO_VALUE_REFRESH_INTERVAL = 15 * 60
-RISK_CATEGORY_REFRESH_INTERVAL = 24 * 60 * 60
+RISK_CATEGORY_REFRESH_HOUR = 7
+RISK_CATEGORY_REFRESH_MINUTE = 0
 
 
 async def _close_all(*connections) -> None:
@@ -25,18 +27,6 @@ async def _close_all(*connections) -> None:
             await connection.close()
         except Exception:
             logger.exception("Failed to close %s", connection)
-
-
-async def _run_loop(name: str, fn, interval: float, stop_event: asyncio.Event) -> None:
-    while not stop_event.is_set():
-        try:
-            await fn()
-        except Exception:
-            logger.exception("%s cycle failed", name)
-        try:
-            await asyncio.wait_for(stop_event.wait(), timeout=interval)
-        except TimeoutError:
-            pass
 
 
 async def main() -> None:
@@ -74,16 +64,17 @@ async def main() -> None:
         refresher = PortfolioRefresher(portfolio_repository, token_service, read_client)
 
         await asyncio.gather(
-            _run_loop(
+            run_interval(
                 "Portfolio value refresh",
                 refresher.refresh_portfolio_values,
                 PORTFOLIO_VALUE_REFRESH_INTERVAL,
                 stop_event,
             ),
-            _run_loop(
+            run_daily_at(
                 "Risk category refresh",
                 refresher.refresh_risk_category_ids,
-                RISK_CATEGORY_REFRESH_INTERVAL,
+                RISK_CATEGORY_REFRESH_HOUR,
+                RISK_CATEGORY_REFRESH_MINUTE,
                 stop_event,
             ),
         )

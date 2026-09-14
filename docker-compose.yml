@@ -21,6 +21,7 @@ services:
   postgres:
     image: postgres:18
     restart: unless-stopped
+    command: postgres -c timezone=Europe/Moscow
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
